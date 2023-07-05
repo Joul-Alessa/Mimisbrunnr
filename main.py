@@ -20,6 +20,17 @@ def createProfile(profileName):
     else:
         print("'" + str(profileName) + "' profile already exists")
 
+#%% Edit a profile name
+def editProfile(oldName, newName):
+    oldFolderName = os.path.join(os.getcwd(), "assets/" + str(oldName))
+    newFolderName = os.path.join(os.getcwd(), "assets/" + str(newName))
+    
+    if os.path.exists(oldFolderName):
+        os.rename(oldFolderName, newFolderName)
+        print("Changed '" + str(oldName) + "' profile name to '" + str(newName) + "' profile name")
+    else:
+        print("'" + str(oldName) + "' profile does not exist")
+
 #%% Delete a profile
 def deleteProfile(profileName):
     folderName = os.path.join(os.getcwd(), "assets/" + str(profileName))
