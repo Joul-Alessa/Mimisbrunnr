@@ -3,6 +3,8 @@ const resourceDetailModel = require('../models/resourceDetailModel');
 const cardResourceModel = require('../models/cardResourceModel');
 const cardFieldModel = require('../models/cardFieldModel');
 const cardReviewModel = require('../models/cardReviewModel');
+const cardGenerationModel = require('../models/cardGenerationModel');
+const llmService = require('./llmService');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
 
 const CARD_TYPES = ['front_back', 'cloze', 'custom', 'plain'];
@@ -100,4 +102,33 @@ async function deleteCard(id) {
   await cardModel.remove(id);
 }
 
-module.exports = { createCard, getCardFull, updateCard, deleteCard, CARD_TYPES };
+// Sends a plain-knowledge card's content through the LLM interface (spec
+// section 5). `save: false` skips persisting to card_generation, letting the
+// caller preview a transformation without keeping it around.
+async function generateFromCard(id, mode, { save = true } = {}) {
+  const card = await cardModel.findById(id);
+  if (!card) throw new NotFoundError(`Card ${id} not found`);
+  if (card.type !== 'plain') {
+    throw new BadRequestError('Only "plain" knowledge cards can be transformed by the LLM');
+  }
+
+  const result = await llmService.generateFromContent(mode, card.content);
+
+  if (save) {
+    result.generation = await cardGenerationModel.create({
+      card_id: id,
+      mode: result.mode,
+      generated_content: result.generated_content,
+    });
+  }
+
+  return result;
+}
+
+async function listGenerations(id) {
+  const card = await cardModel.findById(id);
+  if (!card) throw new NotFoundError(`Card ${id} not found`);
+  return cardGenerationModel.findByCardId(id);
+}
+
+module.exports = { createCard, getCardFull, updateCard, deleteCard, generateFromCard, listGenerations, CARD_TYPES };

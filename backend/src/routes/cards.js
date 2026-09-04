@@ -75,4 +75,16 @@ router.delete('/:id/fields/:fieldId', asyncHandler(async (req, res) => {
   res.json(await cardService.getCardFull(req.params.id));
 }));
 
+// LLM transformation of a "plain" knowledge card (spec section 5). Currently
+// backed by a stub that echoes the prompt instead of a real model response —
+// see backend/src/services/llmService.js.
+router.post('/:id/generate', asyncHandler(async (req, res) => {
+  const { mode = 'random', save = true } = req.body;
+  res.status(201).json(await cardService.generateFromCard(req.params.id, mode, { save }));
+}));
+
+router.get('/:id/generations', asyncHandler(async (req, res) => {
+  res.json(await cardService.listGenerations(req.params.id));
+}));
+
 module.exports = router;
