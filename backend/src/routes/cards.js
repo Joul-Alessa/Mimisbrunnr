@@ -2,6 +2,7 @@ const express = require('express');
 const cardModel = require('../models/cardModel');
 const cardService = require('../services/cardService');
 const cardResourceModel = require('../models/cardResourceModel');
+const cardFieldModel = require('../models/cardFieldModel');
 const resourceDetailModel = require('../models/resourceDetailModel');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -50,6 +51,27 @@ router.post('/:id/resources', asyncHandler(async (req, res) => {
 
 router.delete('/:id/resources/:resourceId', asyncHandler(async (req, res) => {
   await cardResourceModel.removeResourceFromCard(req.params.id, req.params.resourceId);
+  res.json(await cardService.getCardFull(req.params.id));
+}));
+
+// Knowledge field associations (a card can belong to multiple fields).
+router.get('/:id/fields', asyncHandler(async (req, res) => {
+  res.json(await cardFieldModel.getFieldsForCard(req.params.id));
+}));
+
+// Replaces the full set of fields for the card.
+router.put('/:id/fields', asyncHandler(async (req, res) => {
+  await cardFieldModel.setFieldsForCard(req.params.id, req.body.field_ids || []);
+  res.json(await cardService.getCardFull(req.params.id));
+}));
+
+router.post('/:id/fields', asyncHandler(async (req, res) => {
+  await cardFieldModel.addFieldToCard(req.params.id, req.body.field_id);
+  res.status(201).json(await cardService.getCardFull(req.params.id));
+}));
+
+router.delete('/:id/fields/:fieldId', asyncHandler(async (req, res) => {
+  await cardFieldModel.removeFieldFromCard(req.params.id, req.params.fieldId);
   res.json(await cardService.getCardFull(req.params.id));
 }));
 
