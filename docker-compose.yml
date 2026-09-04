@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: mimisbrunnr-backend
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_PATH: /app/data/mimisbrunnr.sqlite
+      LLM_PROVIDER: ollama
+      LLM_BASE_URL: http://host.docker.internal:11434
+      LLM_MODEL: llama3
+    volumes:
+      - mimisbrunnr-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  mimisbrunnr-data:
