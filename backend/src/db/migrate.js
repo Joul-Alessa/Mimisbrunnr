@@ -5,10 +5,10 @@ const { getDb } = require('./connection');
 // Very small migration runner: applies every .sql file in ./migrations,
 // in filename order, and records applied filenames in a `_migrations` table
 // so re-running is a no-op.
-function runMigrations() {
+async function runMigrations() {
   const db = getDb();
 
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS _migrations (
       name        TEXT PRIMARY KEY,
       applied_at  TEXT NOT NULL DEFAULT (STRFTIME('%Y-%m-%dT%H:%M:%fZ', 'now'))
@@ -21,29 +21,38 @@ function runMigrations() {
     .filter((f) => f.endsWith('.sql'))
     .sort();
 
-  const already = new Set(
-    db.prepare('SELECT name FROM _migrations').all().map((row) => row.name)
-  );
-
-  const insertMigration = db.prepare('INSERT INTO _migrations (name) VALUES (?)');
+  const appliedRows = await db.all('SELECT name FROM _migrations');
+  const already = new Set(appliedRows.map((row) => row.name));
 
   for (const file of files) {
     if (already.has(file)) continue;
 
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
-    const applyMigration = db.transaction(() => {
-      db.exec(sql);
-      insertMigration.run(file);
-    });
 
-    applyMigration();
+    await db.exec('BEGIN');
+    try {
+      await db.exec(sql);
+      await db.run('INSERT INTO _migrations (name) VALUES (?)', [file]);
+      await db.exec('COMMIT');
+    } catch (err) {
+      await db.exec('ROLLBACK');
+      throw err;
+    }
+
     console.log(`Applied migration: ${file}`);
   }
 }
 
 if (require.main === module) {
-  runMigrations();
-  console.log('Migrations complete.');
+  runMigrations()
+    .then(() => {
+      console.log('Migrations complete.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Migration failed:', err);
+      process.exit(1);
+    });
 }
 
 module.exports = { runMigrations };
