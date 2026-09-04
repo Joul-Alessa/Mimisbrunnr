@@ -1,4 +1,5 @@
 const path = require('path');
+require('dotenv').config();
 
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
