@@ -72,6 +72,23 @@
   border-bottom: 1px solid var(--surface-border);
 }
 
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.toolbar input {
+  flex: 1;
+}
+
 .error {
   color: var(--danger);
 }

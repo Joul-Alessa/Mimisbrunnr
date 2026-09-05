@@ -1,12 +1,27 @@
-import { useEffect, useState } from 'react';
-import { listResources, createResource } from '../api/resources';
+import { useEffect, useMemo, useState } from 'react';
+import { listResources, createResource, updateResource } from '../api/resources';
 
 const RESOURCE_TYPES = ['youtube', 'book', 'article', 'ai', 'other'];
+
+function emptyForm() {
+  return { type: 'youtube', title: '', author_or_channel: '', url: '', editorial: '', notes: '' };
+}
+
+function matchesSearch(resource, search) {
+  if (!search) return true;
+  const needle = search.toLowerCase();
+  return [resource.title, resource.author_or_channel, resource.notes, resource.url]
+    .filter(Boolean)
+    .some((field) => field.toLowerCase().includes(needle));
+}
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState([]);
   const [error, setError] = useState(null);
-  const [form, setForm] = useState({ type: 'youtube', title: '', author_or_channel: '', url: '' });
+  const [form, setForm] = useState(emptyForm());
+  const [editingId, setEditingId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
 
   async function refresh() {
     try {
@@ -20,12 +35,38 @@ export default function ResourcesPage() {
     refresh();
   }, []);
 
+  const filteredResources = useMemo(
+    () => resources.filter((r) => (typeFilter ? r.type === typeFilter : true) && matchesSearch(r, search)),
+    [resources, search, typeFilter]
+  );
+
+  function startEdit(resource) {
+    setEditingId(resource.id);
+    setForm({
+      type: resource.type,
+      title: resource.title,
+      author_or_channel: resource.author_or_channel || '',
+      url: resource.url || '',
+      editorial: resource.editorial || '',
+      notes: resource.notes || '',
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(emptyForm());
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
     try {
-      await createResource(form);
-      setForm({ type: 'youtube', title: '', author_or_channel: '', url: '' });
+      if (editingId) {
+        await updateResource(editingId, form);
+      } else {
+        await createResource(form);
+      }
+      cancelEdit();
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -57,15 +98,42 @@ export default function ResourcesPage() {
           value={form.url}
           onChange={(e) => setForm({ ...form, url: e.target.value })}
         />
-        <button type="submit">Add resource</button>
+        <input
+          placeholder="Editorial (books)"
+          value={form.editorial}
+          onChange={(e) => setForm({ ...form, editorial: e.target.value })}
+        />
+        <input
+          placeholder="Notes"
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+        />
+        <button type="submit">{editingId ? 'Save changes' : 'Add resource'}</button>
+        {editingId && <button type="button" onClick={cancelEdit}>Cancel</button>}
       </form>
 
+      <div className="toolbar">
+        <input
+          placeholder="Search title, author, notes, URL..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="">All types</option>
+          {RESOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+
       <ul className="list">
-        {resources.map((r) => (
-          <li key={r.id}>
-            <strong>[{r.type}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
+        {filteredResources.map((r) => (
+          <li key={r.id} className="list-item">
+            <span>
+              <strong>[{r.type}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
+            </span>
+            <button type="button" onClick={() => startEdit(r)}>Edit</button>
           </li>
         ))}
+        {filteredResources.length === 0 && <p className="hint">No resources match your search/filter.</p>}
       </ul>
     </div>
   );
