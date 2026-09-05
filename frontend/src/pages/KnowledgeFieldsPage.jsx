@@ -1,18 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getFieldTree, listFields, createField, updateField, deleteField } from '../api/knowledgeFields';
 
-const DEPTH_COLORS = [
-  '#dbeafe', // blue
-  '#fef3c7', // amber
-  '#dcfce7', // green
-  '#fce7f3', // pink
-  '#ede9fe', // violet
-  '#ffedd5', // orange
-];
-
-function colorForDepth(depth) {
-  return DEPTH_COLORS[depth % DEPTH_COLORS.length];
-}
+const DEPTH_CLASS_COUNT = 6; // matches the .depth-0..depth-5 rules in App.css
 
 // All descendant ids of `id` (including itself), computed from the flat
 // list — used to stop a field from being dropped onto itself or one of its
@@ -58,8 +47,7 @@ function FieldSetNode({
 
   return (
     <div
-      className={`field-set depth-${depth}${dragOver ? ' drag-over' : ''}${isBeingDragged ? ' dragging' : ''}`}
-      style={{ background: colorForDepth(depth) }}
+      className={`field-set depth-${depth % DEPTH_CLASS_COUNT}${dragOver ? ' drag-over' : ''}${isBeingDragged ? ' dragging' : ''}`}
       draggable={!isRenaming}
       onDragStart={(e) => {
         e.stopPropagation();

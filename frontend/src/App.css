@@ -8,24 +8,40 @@
   display: flex;
   align-items: center;
   gap: 2rem;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--surface-border);
   padding-bottom: 1rem;
   margin-bottom: 1rem;
 }
 
+.app-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
 .app-header nav {
   display: flex;
-  gap: 1rem;
+  gap: 0.25rem;
+  flex: 1;
 }
 
 .app-header nav a {
   text-decoration: none;
-  color: #555;
+  color: var(--nav-text);
+  background: var(--nav-bg);
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-weight: 500;
 }
 
 .app-header nav a.active {
-  color: #111;
-  font-weight: bold;
+  color: var(--nav-active-text);
+  background: var(--nav-active-bg);
+}
+
+.theme-toggle {
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  white-space: nowrap;
 }
 
 .card-form {
@@ -35,13 +51,15 @@
   align-items: flex-start;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  border: 1px solid #eee;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
 }
 
 .card-form fieldset {
-  border: 1px solid #eee;
+  border: 1px solid var(--surface-border);
   border-radius: 6px;
+  color: var(--text);
 }
 
 .list {
@@ -51,15 +69,15 @@
 
 .list li {
   padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--surface-border);
 }
 
 .error {
-  color: #b00020;
+  color: var(--danger);
 }
 
 .hint {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -68,32 +86,40 @@
 .field-canvas {
   min-height: 300px;
   padding: 2rem;
-  border: 1px dashed #ccc;
+  border: 1px dashed var(--canvas-border);
   border-radius: 12px;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 1.5rem;
-  background: #fafafa;
+  background: var(--canvas-bg);
 }
 
 .field-set {
   position: relative;
   border-radius: 16px;
   padding: 0.9rem 1.1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow);
   cursor: grab;
   transition: box-shadow 0.15s, transform 0.15s;
   border: 2px solid transparent;
+  color: var(--text);
 }
+
+.field-set.depth-0 { background: var(--field-depth-0); }
+.field-set.depth-1 { background: var(--field-depth-1); }
+.field-set.depth-2 { background: var(--field-depth-2); }
+.field-set.depth-3 { background: var(--field-depth-3); }
+.field-set.depth-4 { background: var(--field-depth-4); }
+.field-set.depth-5 { background: var(--field-depth-5); }
 
 .field-set:active {
   cursor: grabbing;
 }
 
 .field-set.drag-over {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .field-set.dragging {
@@ -108,9 +134,11 @@
 .field-set-rename input {
   font: inherit;
   font-weight: 600;
-  border: 1px solid #2563eb;
+  border: 1px solid var(--accent);
   border-radius: 4px;
   padding: 0.1rem 0.3rem;
+  background: var(--input-bg);
+  color: var(--text);
 }
 
 .field-set-children {
@@ -125,10 +153,10 @@
 .add-popup {
   position: fixed;
   z-index: 50;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
   padding: 0.35rem;
   display: flex;
   flex-direction: column;
@@ -137,6 +165,7 @@
 
 .context-menu button {
   background: none;
+  color: var(--text);
   border: none;
   text-align: left;
   padding: 0.45rem 0.6rem;
@@ -146,11 +175,11 @@
 }
 
 .context-menu button:hover {
-  background: #f0f0f0;
+  background: var(--surface-border);
 }
 
 .context-menu button.danger {
-  color: #b00020;
+  color: var(--danger);
 }
 
 .add-popup {
@@ -164,7 +193,8 @@
 
 .study-card {
   padding: 1.5rem;
-  border: 1px solid #ddd;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
 }
 
@@ -180,7 +210,8 @@
 
 .generated {
   white-space: pre-wrap;
-  background: #f7f7f7;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
   padding: 0.5rem;
   border-radius: 4px;
 }

@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 const links = [
   { to: '/', label: 'Study', end: true },
@@ -19,6 +20,7 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        <ThemeToggle />
       </header>
       <main className="app-main">
         <Outlet />
