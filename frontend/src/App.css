@@ -1,0 +1,87 @@
+.app-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.app-header nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.app-header nav a {
+  text-decoration: none;
+  color: #555;
+}
+
+.app-header nav a.active {
+  color: #111;
+  font-weight: bold;
+}
+
+.card-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.card-form fieldset {
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+}
+
+.list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.tree ul {
+  list-style: none;
+  padding-left: 1.25rem;
+}
+
+.error {
+  color: #b00020;
+}
+
+.study-card {
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.study-card .prompt {
+  font-size: 1.2rem;
+}
+
+.review-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.generated {
+  white-space: pre-wrap;
+  background: #f7f7f7;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
