@@ -93,6 +93,10 @@ async function updateCard(id, fields) {
     await cardFieldModel.setFieldsForCard(id, fields.field_ids);
   }
 
+  if (fields.resource_ids) {
+    await cardResourceModel.setResourcesForCard(id, fields.resource_ids);
+  }
+
   return getCardFull(id);
 }
 
