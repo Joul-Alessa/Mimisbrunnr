@@ -15,8 +15,8 @@ See [Docs/Initial-Specs.md](Docs/Initial-Specs.md) for the full requirements.
 | 4 | Knowledge Graph API | Done |
 | 5 | Spaced repetition engine & study flow | Done |
 | 6 | LLM integration interface (stubbed) | Done |
-| 7 | Containers (backend) | Files prepared, untested |
-| 8 | Frontend (React) | In progress |
+| 7 | Containers (backend + frontend) | Files prepared, untested |
+| 8 | Frontend (React) | In progress — Study/Cards/Resources/Knowledge Fields pages working against the live API |
 
 ## Stack
 
@@ -25,7 +25,9 @@ See [Docs/Initial-Specs.md](Docs/Initial-Specs.md) for the full requirements.
   `backend/src/db/connection.js`). Schema designed to be portable to PostgreSQL later.
   (Note: `better-sqlite3` and Node's built-in `node:sqlite` were tried first; both were
   dropped — see below.)
-- **Frontend:** React (Vite), in `frontend/`.
+- **Frontend:** React (Vite), in `frontend/`. Requires **Node >= 22.12** — Vite's
+  current toolchain (rolldown) fails to find its native binding below that (see
+  below).
 - **Containers:** Docker (`docker-compose.yml` at the repo root, one `Dockerfile` per app).
 - **LLM:** local runtime (Ollama/LMStudio) via a service-layer interface — not yet
   wired to a real model; see `backend/src/services/llmService.js`.
@@ -47,7 +49,13 @@ backend/
   Dockerfile
   .env.example
 frontend/
-  (Vite + React app — see below)
+  src/
+    api/            # thin fetch wrappers per resource, base URL from VITE_API_URL
+    components/       # shared UI (nav layout)
+    pages/              # StudyPage, CardsPage, ResourcesPage, KnowledgeFieldsPage
+  Dockerfile
+  nginx.conf
+  .env.example
 docker-compose.yml
 Docs/Initial-Specs.md
 ```
@@ -67,6 +75,21 @@ Migrations run automatically on server start (`src/server.js`), or manually via:
 ```bash
 node src/db/migrate.js
 ```
+
+## Running the frontend locally
+
+Requires Node >= 22.12 (see Stack above).
+
+```bash
+cd frontend
+npm install
+cp .env.example .env    # VITE_API_URL, defaults to http://localhost:3000/api
+npm run dev
+```
+
+Pages: **Study** (weighted due-card queue with easy/medium/hard feedback), **Cards**
+(create plain/front_back/cloze cards, link resources & fields, trigger the LLM stub),
+**Resources**, **Knowledge Fields** (nested tree + add form).
 
 ## API overview
 
@@ -101,12 +124,17 @@ explored by reading the route files directly (`backend/src/routes/`), but in sho
   mode (`question`/`cloze`/`example`/`reasoning`/`random`) but `callLLM()` is a stub
   that returns the prompt itself instead of a model response, until a local LLM
   runtime is wired up.
+- **Frontend build tooling:** the frontend needs Node >= 22.12. Below that, `npm run
+  build` fails with `Cannot find native binding` for `@rolldown/binding-*` — Vite's
+  current toolchain (rolldown) silently skips installing its platform-specific
+  optional dependency when the Node engine requirement isn't met. Fixed by upgrading
+  Node; no change to the scaffold was needed.
 
 ## Containers
 
-`docker-compose.yml` (repo root) builds and runs the backend; a frontend service will
-be added once the frontend build is ready. These files are prepared but intentionally
-**not yet build/run-tested** — do that yourself:
+`docker-compose.yml` (repo root) builds and runs both the backend and the frontend
+(served as a static build behind nginx, on port 8080). These files are prepared but
+intentionally **not yet build/run-tested** — do that yourself:
 
 ```bash
 docker compose build
