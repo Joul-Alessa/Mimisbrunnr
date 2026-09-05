@@ -20,6 +20,7 @@ export default function ResourcesPage() {
   const [error, setError] = useState(null);
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
 
@@ -40,7 +41,13 @@ export default function ResourcesPage() {
     [resources, search, typeFilter]
   );
 
-  function startEdit(resource) {
+  function openCreateModal() {
+    setEditingId(null);
+    setForm(emptyForm());
+    setIsModalOpen(true);
+  }
+
+  function openEditModal(resource) {
     setEditingId(resource.id);
     setForm({
       type: resource.type,
@@ -50,9 +57,11 @@ export default function ResourcesPage() {
       editorial: resource.editorial || '',
       notes: resource.notes || '',
     });
+    setIsModalOpen(true);
   }
 
-  function cancelEdit() {
+  function closeModal() {
+    setIsModalOpen(false);
     setEditingId(null);
     setForm(emptyForm());
   }
@@ -66,7 +75,7 @@ export default function ResourcesPage() {
       } else {
         await createResource(form);
       }
-      cancelEdit();
+      closeModal();
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -78,41 +87,8 @@ export default function ResourcesPage() {
       <h2>Resources</h2>
       {error && <p className="error">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="card-form">
-        <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-          {RESOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <input
-          placeholder="Title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          required
-        />
-        <input
-          placeholder="Author / Channel"
-          value={form.author_or_channel}
-          onChange={(e) => setForm({ ...form, author_or_channel: e.target.value })}
-        />
-        <input
-          placeholder="URL"
-          value={form.url}
-          onChange={(e) => setForm({ ...form, url: e.target.value })}
-        />
-        <input
-          placeholder="Editorial (books)"
-          value={form.editorial}
-          onChange={(e) => setForm({ ...form, editorial: e.target.value })}
-        />
-        <input
-          placeholder="Notes"
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-        />
-        <button type="submit">{editingId ? 'Save changes' : 'Add resource'}</button>
-        {editingId && <button type="button" onClick={cancelEdit}>Cancel</button>}
-      </form>
-
       <div className="toolbar">
+        <button type="button" onClick={openCreateModal}>+ Add resource</button>
         <input
           placeholder="Search title, author, notes, URL..."
           value={search}
@@ -130,11 +106,55 @@ export default function ResourcesPage() {
             <span>
               <strong>[{r.type}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
             </span>
-            <button type="button" onClick={() => startEdit(r)}>Edit</button>
+            <button type="button" onClick={() => openEditModal(r)}>Edit</button>
           </li>
         ))}
         {filteredResources.length === 0 && <p className="hint">No resources match your search/filter.</p>}
       </ul>
+
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{editingId ? 'Edit resource' : 'Add resource'}</h3>
+            <form onSubmit={handleSubmit} className="modal-form">
+              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                {RESOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <input
+                placeholder="Title"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+                autoFocus
+              />
+              <input
+                placeholder="Author / Channel"
+                value={form.author_or_channel}
+                onChange={(e) => setForm({ ...form, author_or_channel: e.target.value })}
+              />
+              <input
+                placeholder="URL"
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+              />
+              <input
+                placeholder="Editorial (books)"
+                value={form.editorial}
+                onChange={(e) => setForm({ ...form, editorial: e.target.value })}
+              />
+              <input
+                placeholder="Notes"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
+              <div className="modal-actions">
+                <button type="button" onClick={closeModal}>Cancel</button>
+                <button type="submit">{editingId ? 'Save changes' : 'Add resource'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
