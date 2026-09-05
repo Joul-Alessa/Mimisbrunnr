@@ -54,13 +54,112 @@
   border-bottom: 1px solid #eee;
 }
 
-.tree ul {
-  list-style: none;
-  padding-left: 1.25rem;
-}
-
 .error {
   color: #b00020;
+}
+
+.hint {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* --- Knowledge field "nested sets" diagram --- */
+
+.field-canvas {
+  min-height: 300px;
+  padding: 2rem;
+  border: 1px dashed #ccc;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+  background: #fafafa;
+}
+
+.field-set {
+  position: relative;
+  border-radius: 16px;
+  padding: 0.9rem 1.1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  cursor: grab;
+  transition: box-shadow 0.15s, transform 0.15s;
+  border: 2px solid transparent;
+}
+
+.field-set:active {
+  cursor: grabbing;
+}
+
+.field-set.drag-over {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.field-set.dragging {
+  opacity: 0.4;
+}
+
+.field-set-label {
+  font-weight: 600;
+  user-select: none;
+}
+
+.field-set-rename input {
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+}
+
+.field-set-children {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.context-menu,
+.add-popup {
+  position: fixed;
+  z-index: 50;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.context-menu button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.context-menu button:hover {
+  background: #f0f0f0;
+}
+
+.context-menu button.danger {
+  color: #b00020;
+}
+
+.add-popup {
+  flex-direction: row;
+  padding: 0.4rem;
+}
+
+.add-popup input {
+  flex: 1;
 }
 
 .study-card {
