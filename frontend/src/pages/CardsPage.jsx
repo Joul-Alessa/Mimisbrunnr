@@ -353,13 +353,23 @@ export default function CardsPage() {
               )}
             </div>
             {c.resources && c.resources.length > 0 && (
-              <p className="card-source hint">
-                Source: {c.resources.map((r) => {
-                  const detail = (c.resource_details || []).find((d) => d.resource_id === r.id);
-                  const label = detail ? formatDetailLabel(detail) : '';
-                  return `[${getResourceTypeLabel(r.type)}] ${r.title}${label ? ` (${label})` : ''}`;
-                }).join(', ')}
-              </p>
+              <div className="card-source">
+                <p className="hint">Source:</p>
+                <ul className="list">
+                  {c.resources.map((r) => {
+                    const detail = (c.resource_details || []).find((d) => d.resource_id === r.id);
+                    const label = detail ? formatDetailLabel(detail) : '';
+                    return (
+                      <li key={r.id} className="list-item">
+                        <span>
+                          <strong>[{getResourceTypeLabel(r.type)}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
+                          {label && ` (${label})`}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
             {generated[c.id] && (
               <pre className="generated">{generated[c.id].mode}: {generated[c.id].generated_content}</pre>
