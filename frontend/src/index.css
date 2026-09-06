@@ -29,6 +29,15 @@
   --field-depth-4: #ede9fe;
   --field-depth-5: #ffedd5;
 
+  --code-bg: #f6f8fa;
+  --syntax-keyword: #cf222e;
+  --syntax-string: #0a3069;
+  --syntax-comment: #6e7781;
+  --syntax-number: #0550ae;
+  --syntax-function: #8250df;
+  --syntax-tag: #116329;
+  --syntax-variable: #953800;
+
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
@@ -71,6 +80,15 @@
     --field-depth-3: #4a1f38;
     --field-depth-4: #33235f;
     --field-depth-5: #4a2e12;
+
+    --code-bg: #0d1117;
+    --syntax-keyword: #ff7b72;
+    --syntax-string: #a5d6ff;
+    --syntax-comment: #8b949e;
+    --syntax-number: #79c0ff;
+    --syntax-function: #d2a8ff;
+    --syntax-tag: #7ee787;
+    --syntax-variable: #ffa657;
   }
 }
 
@@ -102,6 +120,15 @@
   --field-depth-3: #4a1f38;
   --field-depth-4: #33235f;
   --field-depth-5: #4a2e12;
+
+  --code-bg: #0d1117;
+  --syntax-keyword: #ff7b72;
+  --syntax-string: #a5d6ff;
+  --syntax-comment: #8b949e;
+  --syntax-number: #79c0ff;
+  --syntax-function: #d2a8ff;
+  --syntax-tag: #7ee787;
+  --syntax-variable: #ffa657;
 }
 
 * {
@@ -155,6 +182,9 @@ button:hover {
 code {
   font-family: var(--mono);
   font-size: 0.9em;
+}
+
+:not(pre) > code {
   padding: 2px 6px;
   border-radius: 4px;
   background: var(--surface-border);

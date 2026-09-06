@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { listCards, getCard, createCard, updateCard, deleteCard, generateFromCard } from '../api/cards';
 import { listResources } from '../api/resources';
 import { listFields } from '../api/knowledgeFields';
+import MarkdownField from '../components/MarkdownField';
 
 const CARD_TYPES = ['plain', 'front_back', 'cloze', 'custom'];
 const CARD_TYPE_LABELS = {
@@ -201,24 +202,24 @@ export default function CardsPage() {
               </select>
 
               {form.type === 'plain' && (
-                <textarea
+                <MarkdownField
                   placeholder="Plain knowledge content"
                   value={form.content}
-                  onChange={(e) => setForm({ ...form, content: e.target.value })}
+                  onChange={(v) => setForm({ ...form, content: v })}
                   required
                 />
               )}
               {form.type === 'front_back' && (
                 <>
-                  <input placeholder="Front" value={form.front} onChange={(e) => setForm({ ...form, front: e.target.value })} required />
-                  <input placeholder="Back" value={form.back} onChange={(e) => setForm({ ...form, back: e.target.value })} required />
+                  <MarkdownField placeholder="Front" value={form.front} onChange={(v) => setForm({ ...form, front: v })} required />
+                  <MarkdownField placeholder="Back" value={form.back} onChange={(v) => setForm({ ...form, back: v })} required />
                 </>
               )}
               {form.type === 'cloze' && (
-                <textarea
+                <MarkdownField
                   placeholder="Cloze text (use {{...}} for blanks)"
                   value={form.cloze_text}
-                  onChange={(e) => setForm({ ...form, cloze_text: e.target.value })}
+                  onChange={(v) => setForm({ ...form, cloze_text: v })}
                   required
                 />
               )}
