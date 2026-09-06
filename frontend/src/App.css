@@ -252,6 +252,14 @@ button.danger {
   flex: 1;
 }
 
+.study-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
 .study-card {
   padding: 1.5rem;
   background: var(--surface);
@@ -261,11 +269,21 @@ button.danger {
 
 .study-card .prompt {
   font-size: 1.2rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.study-card .answer {
+  margin-bottom: 1rem;
 }
 
 .review-buttons {
   display: flex;
   gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.queue-count {
   margin-top: 1rem;
 }
 
