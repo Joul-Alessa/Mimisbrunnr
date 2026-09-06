@@ -133,6 +133,7 @@ export default function KnowledgeFieldsPage() {
   const [addValue, setAddValue] = useState('');
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+  const [deleteModal, setDeleteModal] = useState(null); // { id, name, hasChildren, cascade }
 
   const canvasRef = useRef(null);
 
@@ -221,15 +222,24 @@ export default function KnowledgeFieldsPage() {
     }
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!menu?.targetId) return;
     const id = menu.targetId;
     setMenu(null);
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(`Delete "${nameById.get(id)}"? Its subfields will become top-level fields.`)) return;
+    const hasChildren = flatFields.some((f) => f.parent_id === id);
+    setDeleteModal({ id, name: nameById.get(id), hasChildren, cascade: false });
+  }
+
+  function closeDeleteModal() {
+    setDeleteModal(null);
+  }
+
+  async function confirmDelete() {
+    const { id, cascade } = deleteModal;
+    setDeleteModal(null);
     setError(null);
     try {
-      await deleteField(id);
+      await deleteField(id, cascade);
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -340,6 +350,43 @@ export default function KnowledgeFieldsPage() {
           />
           <button type="submit">Add</button>
         </form>
+      )}
+
+      {deleteModal && (
+        <div className="modal-overlay" onClick={closeDeleteModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete "{deleteModal.name}"</h3>
+            {deleteModal.hasChildren ? (
+              <div className="modal-form">
+                <p className="hint">This field has subfields. Choose what should happen to them:</p>
+                <label>
+                  <input
+                    type="radio"
+                    name="delete-mode"
+                    checked={!deleteModal.cascade}
+                    onChange={() => setDeleteModal({ ...deleteModal, cascade: false })}
+                  />
+                  {' '}Keep subfields — they become top-level fields
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="delete-mode"
+                    checked={deleteModal.cascade}
+                    onChange={() => setDeleteModal({ ...deleteModal, cascade: true })}
+                  />
+                  {' '}Delete subfields too
+                </label>
+              </div>
+            ) : (
+              <p className="hint">This field will be permanently deleted.</p>
+            )}
+            <div className="modal-actions">
+              <button type="button" onClick={closeDeleteModal}>Cancel</button>
+              <button type="button" className="danger" onClick={confirmDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

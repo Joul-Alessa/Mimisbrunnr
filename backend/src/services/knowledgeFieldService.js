@@ -38,9 +38,13 @@ async function updateField(id, fields) {
   return knowledgeFieldModel.update(id, fields);
 }
 
-async function deleteField(id) {
+async function deleteField(id, { cascade = false } = {}) {
   await assertFieldExists(id);
-  await knowledgeFieldModel.remove(id);
+  if (cascade) {
+    await knowledgeFieldModel.removeCascade(id);
+  } else {
+    await knowledgeFieldModel.remove(id);
+  }
 }
 
 // Builds a nested tree (children arrays) from the flat table.

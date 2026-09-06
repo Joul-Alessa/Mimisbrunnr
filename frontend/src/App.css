@@ -202,7 +202,15 @@
 }
 
 .context-menu button.danger {
+  background: none;
   color: var(--danger);
+  border: none;
+}
+
+button.danger {
+  background: var(--danger);
+  color: var(--accent-contrast);
+  border: none;
 }
 
 .add-popup {

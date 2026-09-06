@@ -60,4 +60,23 @@ async function remove(id) {
   return changes > 0;
 }
 
-module.exports = { create, findById, findAll, findChildren, findDescendantIds, update, remove };
+// Deletes `id` together with all of its descendants (used when the caller
+// explicitly asks to remove subfields instead of the default behavior of
+// promoting them to top-level fields via ON DELETE SET NULL).
+async function removeCascade(id) {
+  const db = getDb();
+  const ids = await findDescendantIds(id);
+  await db.exec('BEGIN');
+  try {
+    for (const descendantId of ids) {
+      await db.run('DELETE FROM knowledge_field WHERE id = ?', [descendantId]);
+    }
+    await db.exec('COMMIT');
+  } catch (err) {
+    await db.exec('ROLLBACK');
+    throw err;
+  }
+  return ids.length;
+}
+
+module.exports = { create, findById, findAll, findChildren, findDescendantIds, update, remove, removeCascade };

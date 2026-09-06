@@ -46,7 +46,8 @@ router.put('/:id', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/:id', asyncHandler(async (req, res) => {
-  await knowledgeFieldService.deleteField(req.params.id);
+  const cascade = req.query.cascade === '1';
+  await knowledgeFieldService.deleteField(req.params.id, { cascade });
   res.status(204).end();
 }));
 
