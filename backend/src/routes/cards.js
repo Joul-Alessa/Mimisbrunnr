@@ -32,7 +32,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
 // Link/unlink an existing resource to a card, with an optional location
 // detail (timestamp/page/extra) for that specific resource.
 router.post('/:id/resources', asyncHandler(async (req, res) => {
-  const { resource_id, timestamp_seconds, page_number, extra } = req.body;
+  const { resource_id, timestamp_seconds, timestamp_seconds_end, page_number, page_number_end, extra } = req.body;
   await cardResourceModel.addResourceToCard(req.params.id, resource_id);
 
   if (timestamp_seconds != null || page_number != null || extra != null) {
@@ -40,7 +40,9 @@ router.post('/:id/resources', asyncHandler(async (req, res) => {
       resource_id,
       card_id: req.params.id,
       timestamp_seconds,
+      timestamp_seconds_end,
       page_number,
+      page_number_end,
       extra,
     });
   }

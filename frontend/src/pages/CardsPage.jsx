@@ -37,6 +37,48 @@ function matchesResourceSearch(resource, search) {
     .some((field) => field.toLowerCase().includes(needle));
 }
 
+// Parses "seconds", "mm:ss" or "hh:mm:ss" into an integer number of seconds.
+// Returns null for empty/invalid input.
+function parseTimeToSeconds(value) {
+  if (value == null || value === '') return null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  if (/^\d+$/.test(trimmed)) return Number(trimmed);
+  const parts = trimmed.split(':').map((p) => Number(p));
+  if (parts.length < 2 || parts.length > 3 || parts.some((p) => Number.isNaN(p))) return null;
+  return parts.reduce((total, part) => total * 60 + part, 0);
+}
+
+function formatSecondsToTime(seconds) {
+  if (seconds == null) return '';
+  const s = Math.max(0, Math.round(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+}
+
+function formatDetailLabel(detail) {
+  const pieces = [];
+  if (detail.page_number != null) {
+    pieces.push(
+      detail.page_number_end != null && detail.page_number_end !== detail.page_number
+        ? `p. ${detail.page_number}–${detail.page_number_end}`
+        : `p. ${detail.page_number}`
+    );
+  }
+  if (detail.timestamp_seconds != null) {
+    const start = formatSecondsToTime(detail.timestamp_seconds);
+    pieces.push(
+      detail.timestamp_seconds_end != null && detail.timestamp_seconds_end !== detail.timestamp_seconds
+        ? `${start}–${formatSecondsToTime(detail.timestamp_seconds_end)}`
+        : start
+    );
+  }
+  return pieces.join(', ');
+}
+
 function matchesCardSearch(card, search) {
   if (!search) return true;
   const needle = search.toLowerCase();
@@ -60,6 +102,7 @@ function emptyForm() {
     back: '',
     cloze_text: '',
     resource_ids: [],
+    resource_details: {},
     field_ids: [],
   };
 }
@@ -121,6 +164,32 @@ export default function CardsPage() {
     });
   }
 
+  function toggleResource(resourceId) {
+    setForm((prev) => {
+      const included = prev.resource_ids.includes(resourceId);
+      const resource_ids = included
+        ? prev.resource_ids.filter((id) => id !== resourceId)
+        : [...prev.resource_ids, resourceId];
+      const resource_details = { ...prev.resource_details };
+      if (included) {
+        delete resource_details[resourceId];
+      } else if (!resource_details[resourceId]) {
+        resource_details[resourceId] = { page_number: '', page_number_end: '', timestamp: '', timestamp_end: '' };
+      }
+      return { ...prev, resource_ids, resource_details };
+    });
+  }
+
+  function updateResourceDetail(resourceId, field, value) {
+    setForm((prev) => ({
+      ...prev,
+      resource_details: {
+        ...prev.resource_details,
+        [resourceId]: { ...prev.resource_details[resourceId], [field]: value },
+      },
+    }));
+  }
+
   function openCreateModal() {
     setEditingId(null);
     setForm(emptyForm());
@@ -133,6 +202,15 @@ export default function CardsPage() {
     try {
       const full = await getCard(card.id);
       setEditingId(full.id);
+      const resource_details = {};
+      for (const d of full.resource_details || []) {
+        resource_details[d.resource_id] = {
+          page_number: d.page_number ?? '',
+          page_number_end: d.page_number_end ?? '',
+          timestamp: formatSecondsToTime(d.timestamp_seconds),
+          timestamp_end: formatSecondsToTime(d.timestamp_seconds_end),
+        };
+      }
       setForm({
         type: full.type,
         content: full.content || '',
@@ -140,6 +218,7 @@ export default function CardsPage() {
         back: full.back || '',
         cloze_text: full.cloze_text || '',
         resource_ids: (full.resources || []).map((r) => r.id),
+        resource_details,
         field_ids: (full.fields || []).map((f) => f.id),
       });
       setResourceSearch('');
@@ -155,14 +234,50 @@ export default function CardsPage() {
     setForm(emptyForm());
   }
 
+  function buildResourceDetails() {
+    return form.resource_ids
+      .map((id) => {
+        const d = form.resource_details[id] || {};
+        const resource = resources.find((r) => r.id === id);
+        const detail = { resource_id: id };
+        let hasValue = false;
+
+        if (resource?.type === 'book') {
+          if (d.page_number !== '' && d.page_number != null) {
+            detail.page_number = Number(d.page_number);
+            hasValue = true;
+          }
+          if (d.page_number_end !== '' && d.page_number_end != null) {
+            detail.page_number_end = Number(d.page_number_end);
+            hasValue = true;
+          }
+        } else if (resource?.type === 'youtube') {
+          const start = parseTimeToSeconds(d.timestamp);
+          const end = parseTimeToSeconds(d.timestamp_end);
+          if (start != null) {
+            detail.timestamp_seconds = start;
+            hasValue = true;
+          }
+          if (end != null) {
+            detail.timestamp_seconds_end = end;
+            hasValue = true;
+          }
+        }
+
+        return hasValue ? detail : null;
+      })
+      .filter(Boolean);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
     try {
+      const payload = { ...form, resource_details: buildResourceDetails() };
       if (editingId) {
-        await updateCard(editingId, form);
+        await updateCard(editingId, payload);
       } else {
-        await createCard(form);
+        await createCard(payload);
       }
       closeModal();
       await refresh();
@@ -239,7 +354,11 @@ export default function CardsPage() {
             </div>
             {c.resources && c.resources.length > 0 && (
               <p className="card-source hint">
-                Source: {c.resources.map((r) => `[${getResourceTypeLabel(r.type)}] ${r.title}`).join(', ')}
+                Source: {c.resources.map((r) => {
+                  const detail = (c.resource_details || []).find((d) => d.resource_id === r.id);
+                  const label = detail ? formatDetailLabel(detail) : '';
+                  return `[${getResourceTypeLabel(r.type)}] ${r.title}${label ? ` (${label})` : ''}`;
+                }).join(', ')}
               </p>
             )}
             {generated[c.id] && (
@@ -293,18 +412,56 @@ export default function CardsPage() {
                   onChange={(e) => setResourceSearch(e.target.value)}
                 />
                 <ul className="list">
-                  {filteredResources.map((r) => (
-                    <li key={r.id} className="list-item">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={form.resource_ids.includes(r.id)}
-                          onChange={() => toggleMultiSelect('resource_ids', r.id)}
-                        />
-                        <strong>[{getResourceTypeLabel(r.type)}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
-                      </label>
-                    </li>
-                  ))}
+                  {filteredResources.map((r) => {
+                    const checked = form.resource_ids.includes(r.id);
+                    const detail = form.resource_details[r.id] || {};
+                    return (
+                      <li key={r.id} className="list-item">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleResource(r.id)}
+                          />
+                          <strong>[{getResourceTypeLabel(r.type)}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
+                        </label>
+                        {checked && r.type === 'book' && (
+                          <div className="resource-detail-inputs">
+                            <input
+                              type="number"
+                              min="1"
+                              placeholder="Page"
+                              value={detail.page_number}
+                              onChange={(e) => updateResourceDetail(r.id, 'page_number', e.target.value)}
+                            />
+                            <input
+                              type="number"
+                              min="1"
+                              placeholder="to page (optional)"
+                              value={detail.page_number_end}
+                              onChange={(e) => updateResourceDetail(r.id, 'page_number_end', e.target.value)}
+                            />
+                          </div>
+                        )}
+                        {checked && r.type === 'youtube' && (
+                          <div className="resource-detail-inputs">
+                            <input
+                              type="text"
+                              placeholder="Timestamp (mm:ss)"
+                              value={detail.timestamp}
+                              onChange={(e) => updateResourceDetail(r.id, 'timestamp', e.target.value)}
+                            />
+                            <input
+                              type="text"
+                              placeholder="to (optional)"
+                              value={detail.timestamp_end}
+                              onChange={(e) => updateResourceDetail(r.id, 'timestamp_end', e.target.value)}
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                   {filteredResources.length === 0 && <p className="hint">No resources match your search.</p>}
                 </ul>
               </fieldset>

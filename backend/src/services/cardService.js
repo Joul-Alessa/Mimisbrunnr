@@ -55,7 +55,9 @@ async function createCard(payload) {
       resource_id: detail.resource_id,
       card_id: card.id,
       timestamp_seconds: detail.timestamp_seconds ?? null,
+      timestamp_seconds_end: detail.timestamp_seconds_end ?? null,
       page_number: detail.page_number ?? null,
+      page_number_end: detail.page_number_end ?? null,
       extra: detail.extra ?? null,
     });
   }
@@ -75,15 +77,17 @@ async function listCardsFull({ type } = {}) {
   const cards = await cardModel.findAll({ type });
   const ids = cards.map((c) => c.id);
 
-  const [resourcesByCard, fieldsByCard] = await Promise.all([
+  const [resourcesByCard, fieldsByCard, detailsByCard] = await Promise.all([
     cardResourceModel.getResourcesForCards(ids),
     cardFieldModel.getFieldsForCards(ids),
+    resourceDetailModel.getDetailsForCards(ids),
   ]);
 
   return cards.map((card) => ({
     ...card,
     resources: resourcesByCard[card.id] || [],
     fields: fieldsByCard[card.id] || [],
+    resource_details: detailsByCard[card.id] || [],
   }));
 }
 
@@ -113,6 +117,10 @@ async function updateCard(id, fields) {
 
   if (fields.resource_ids) {
     await cardResourceModel.setResourcesForCard(id, fields.resource_ids);
+  }
+
+  if (fields.resource_details) {
+    await resourceDetailModel.replaceForCard(id, fields.resource_details);
   }
 
   return getCardFull(id);
