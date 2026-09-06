@@ -120,6 +120,7 @@ export default function CardsPage() {
   const [cardSearch, setCardSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [fieldFilter, setFieldFilter] = useState('');
+  const [deleteModal, setDeleteModal] = useState(null); // { id }
 
   const filteredResources = useMemo(
     () => resources.filter((r) => matchesResourceSearch(r, resourceSearch)),
@@ -286,11 +287,20 @@ export default function CardsPage() {
     }
   }
 
-  async function handleDelete(cardId) {
-    if (!window.confirm('Delete this card? This cannot be undone.')) return;
+  function handleDelete(cardId) {
+    setDeleteModal({ id: cardId });
+  }
+
+  function closeDeleteModal() {
+    setDeleteModal(null);
+  }
+
+  async function confirmDelete() {
+    const { id } = deleteModal;
+    setDeleteModal(null);
     setError(null);
     try {
-      await deleteCard(cardId);
+      await deleteCard(id);
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -495,6 +505,19 @@ export default function CardsPage() {
                 <button type="submit">{editingId ? 'Save changes' : 'Add card'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deleteModal && (
+        <div className="modal-overlay" onClick={closeDeleteModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete card</h3>
+            <p className="hint">This card will be permanently deleted. This cannot be undone.</p>
+            <div className="modal-actions">
+              <button type="button" onClick={closeDeleteModal}>Cancel</button>
+              <button type="button" className="danger" onClick={confirmDelete}>Delete</button>
+            </div>
           </div>
         </div>
       )}
