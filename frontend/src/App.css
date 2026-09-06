@@ -91,6 +91,18 @@
   flex-shrink: 0;
 }
 
+.card-list-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.card-list-item-body {
+  width: 100%;
+}
+
 .toolbar input {
   flex: 1;
 }
@@ -271,6 +283,10 @@ button.danger {
   color: var(--text);
 }
 
+.modal-wide {
+  max-width: 720px;
+}
+
 .modal h3 {
   margin-top: 0;
   margin-bottom: 1rem;
@@ -280,6 +296,10 @@ button.danger {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+
+.modal-form textarea {
+  resize: vertical;
 }
 
 .modal-actions {

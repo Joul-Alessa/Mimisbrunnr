@@ -1,20 +1,5 @@
 import { useState } from 'react';
-import { marked } from 'marked';
-import { markedHighlight } from 'marked-highlight';
-import hljs from 'highlight.js';
-import markedKatex from 'marked-katex-extension';
-import 'katex/dist/katex.min.css';
-
-marked.use(
-  markedHighlight({
-    langPrefix: 'hljs language-',
-    highlight(code, lang) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, { language }).value;
-    },
-  })
-);
-marked.use(markedKatex({ throwOnError: false }));
+import { marked } from '../lib/markdown';
 
 export default function MarkdownField({ value, onChange, placeholder, required }) {
   const [mode, setMode] = useState('write');

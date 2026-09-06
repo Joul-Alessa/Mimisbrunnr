@@ -3,6 +3,7 @@ import { listCards, getCard, createCard, updateCard, deleteCard, generateFromCar
 import { listResources } from '../api/resources';
 import { listFields } from '../api/knowledgeFields';
 import MarkdownField from '../components/MarkdownField';
+import MarkdownView from '../components/MarkdownView';
 
 const CARD_TYPES = ['plain', 'front_back', 'cloze', 'custom'];
 const CARD_TYPE_LABELS = {
@@ -173,17 +174,27 @@ export default function CardsPage() {
 
       <ul className="list">
         {cards.map((c) => (
-          <li key={c.id} className="list-item">
-            <span>
-              <strong>[{getTypeLabel(c.type)}]</strong> {c.content || c.front || c.cloze_text}
-            </span>
-            <span className="list-item-actions">
-              {c.type === 'plain' && (
-                <button type="button" onClick={() => handleGenerate(c.id)}>Generate (LLM)</button>
+          <li key={c.id} className="card-list-item">
+            <div className="card-list-item-header">
+              <strong>[{getTypeLabel(c.type)}]</strong>
+              <span className="list-item-actions">
+                {c.type === 'plain' && (
+                  <button type="button" onClick={() => handleGenerate(c.id)}>Generate (LLM)</button>
+                )}
+                <button type="button" onClick={() => openEditModal(c)}>Edit</button>
+                <button type="button" onClick={() => handleDelete(c.id)}>Delete</button>
+              </span>
+            </div>
+            <div className="card-list-item-body">
+              {c.type === 'front_back' ? (
+                <>
+                  <MarkdownView content={c.front} />
+                  <MarkdownView content={c.back} />
+                </>
+              ) : (
+                <MarkdownView content={c.content || c.cloze_text} />
               )}
-              <button type="button" onClick={() => openEditModal(c)}>Edit</button>
-              <button type="button" onClick={() => handleDelete(c.id)}>Delete</button>
-            </span>
+            </div>
             {generated[c.id] && (
               <pre className="generated">{generated[c.id].mode}: {generated[c.id].generated_content}</pre>
             )}
@@ -194,7 +205,7 @@ export default function CardsPage() {
 
       {isModalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
             <h3>{editingId ? 'Edit card' : 'Add card'}</h3>
             <form onSubmit={handleSubmit} className="modal-form">
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>

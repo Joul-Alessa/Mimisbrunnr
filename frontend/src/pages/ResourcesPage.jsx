@@ -125,7 +125,7 @@ export default function ResourcesPage() {
 
       {isModalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
             <h3>{editingId ? 'Edit resource' : 'Add resource'}</h3>
             <form onSubmit={handleSubmit} className="modal-form">
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
