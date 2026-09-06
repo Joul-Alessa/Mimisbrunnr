@@ -58,20 +58,71 @@ UI/UX improvements across Resources, Cards, and Knowledge Fields pages: modals f
   2. Modal type selector dropdown.
 - **Note:** database and API still use the original keys (no backend changes needed).
 
+### Resource Search Inside the Card Modal
+[CardsPage.jsx](../frontend/src/pages/CardsPage.jsx): the Resources checklist inside the Add/Edit card modal was a flat, unfiltered list — hard to use once the resource catalog grows.
+- Added a search input above the checklist (`matchesResourceSearch`, same matching logic as the Resources page: title, author/channel, notes, URL).
+- Each resource in the checklist is now rendered in the same `[Type] Title — Author` format used on the Resources page, instead of just the bare title.
+
+### Markdown Editor for Card Content
+[CardsPage.jsx](../frontend/src/pages/CardsPage.jsx), new [MarkdownField.jsx](../frontend/src/components/MarkdownField.jsx), [MarkdownView.jsx](../frontend/src/components/MarkdownView.jsx), [lib/markdown.js](../frontend/src/lib/markdown.js): the `content`/`front`/`back`/`cloze_text` fields now support writing and previewing Markdown instead of plain text.
+- **`MarkdownField`:** replaces the raw `<textarea>`/`<input>` for those fields. Adds "Write"/"Preview" tabs — Write shows the raw textarea, Preview renders the current value as HTML.
+- **`MarkdownView`:** read-only counterpart used to render already-saved card content in the card list (see below).
+- **`lib/markdown.js`:** shared `marked` configuration used by both components, so editor and list preview render identically. Extensions registered:
+  - `marked-katex-extension` + `katex` — renders `$inline$` and `$$block$$` LaTeX math.
+  - `marked-highlight` + `highlight.js` — syntax-highlights fenced code blocks (` ```js `, etc.) by detected language.
+- **Bug fix — duplicated math/highlight output:** initially `marked.use(...)` was called on the default exported `marked` singleton. During dev, every HMR reload of `lib/markdown.js` re-ran `marked.use(...)` and *appended* the same extensions again onto the persistent singleton, so KaTeX/code rendering doubled up (e.g. `$n$` rendering as the KaTeX output *plus* a leftover literal `n`). Fixed by building an isolated instance instead — `new Marked(markedHighlight(...), markedKatex(...))` — so each module (re-)evaluation gets its own clean instance instead of mutating shared global state.
+- **Bug fix — code block background artifact:** the global `code { padding; border-radius; background }` rule in [index.css](../frontend/src/index.css) was meant for inline code spans, but it also applied to the multi-line `<code>` inside fenced `<pre>` blocks. Because that background/padding sat on an inline element spanning several lines, the browser painted it per line, producing a "stepped boxes" look. Scoped the rule to `:not(pre) > code` (inline only) and gave `<pre><code>` no background/padding of its own — the block-level background comes from `.markdown-preview pre` instead.
+- **Styling** ([App.css](../frontend/src/App.css)): `.markdown-field-tabs`, `.markdown-preview` typography (headings, lists, blockquotes, links), `.markdown-preview pre`/`code` (using a new `--code-bg` variable), and `.hljs-*` token classes mapped to new `--syntax-*` CSS variables (keyword/string/comment/number/function/tag/variable) defined per theme in [index.css](../frontend/src/index.css) so syntax highlighting adapts to light/dark mode like the rest of the app.
+
+### Card List Renders Markdown
+[CardsPage.jsx](../frontend/src/pages/CardsPage.jsx): the card list previously showed raw card text (`c.content || c.front || c.cloze_text`) as plain text. It now renders each card's content through `MarkdownView`, so headings, bold/italic/strikethrough, lists, code blocks (highlighted), and KaTeX math all render the same way they do in the modal's Preview tab. `front_back` cards render both `front` and `back` as separate Markdown blocks.
+
+### Wider Modals + Vertical-Only Textarea Resize
+[App.css](../frontend/src/App.css): the Cards and Resources modals felt cramped once Markdown editing/preview and the resource checklist were added.
+- New `.modal-wide` modifier class (`max-width: 720px` vs. the default `420px`), applied to the Cards and Resources modals only — the Knowledge Fields delete-confirmation modal keeps the narrow default.
+- `.modal-form textarea { resize: vertical }` — textareas (including inside `MarkdownField`) can now only be resized taller/shorter, not wider, so they can't blow past the modal's width.
+
+### Card List Layout: Actions Row Separated From Content
+[CardsPage.jsx](../frontend/src/pages/CardsPage.jsx): previously the type label, content, and Edit/Delete/Generate buttons were all packed into one flex row, squeezing the content column. Restructured each `<li>` into two stacked rows:
+- `.card-list-item-header` — type label (`[Plain Knowledge]`) on the left, action buttons on the right, mirroring where the type label already sat above the card.
+- `.card-list-item-body` — the rendered Markdown content, now spanning the full width of the card.
+
+### Card Source Display + Full-Text Search/Filter
+Cards previously showed no indication of which resource(s) they were sourced from, and there was no way to search/filter the card list.
+
+**Backend** (avoids N+1 queries — batches resource/field lookups for the whole list in one query each):
+- [cardResourceModel.js](../backend/src/models/cardResourceModel.js): new `getResourcesForCards(cardIds)` — single `IN (...)` query returning a `{ [card_id]: Resource[] }` map.
+- [cardFieldModel.js](../backend/src/models/cardFieldModel.js): new `getFieldsForCards(cardIds)` — same pattern for knowledge fields.
+- [cardService.js](../backend/src/services/cardService.js): new `listCardsFull({ type })` — calls `cardModel.findAll`, then attaches `resources` and `fields` to each card via the batch lookups above.
+- [routes/cards.js](../backend/src/routes/cards.js): `GET /cards` now calls `cardService.listCardsFull` instead of `cardModel.findAll` directly, so the list response includes `resources`/`fields` (previously only `GET /cards/:id` returned those, via `getCardFull`).
+
+**Frontend** ([CardsPage.jsx](../frontend/src/pages/CardsPage.jsx)):
+- Each card in the list now shows a "Source: [Type] Title, ..." line when it has linked resources.
+- New toolbar controls: a free-text search box (`matchesCardSearch` — matches card content/front/back/cloze text, type label, resource title/author, and knowledge field names) plus two exact-match dropdown filters (card type, knowledge field). All three combine via `filteredCards`.
+- Empty-state message distinguishes "No cards yet" (nothing created) from "No cards match your search/filters" (results filtered to zero).
+
 ## Summary of Files Changed
 
 **Frontend:**
 - [ResourcesPage.jsx](../frontend/src/pages/ResourcesPage.jsx) — modal pattern, resource type labels.
-- [CardsPage.jsx](../frontend/src/pages/CardsPage.jsx) — modal pattern, delete, fixed edit pre-fill, card type labels.
+- [CardsPage.jsx](../frontend/src/pages/CardsPage.jsx) — modal pattern, delete, fixed edit pre-fill, card type labels, resource search/format in the modal, Markdown editing, wide modal, restructured list rows, source display, search/filter toolbar.
 - [KnowledgeFieldsPage.jsx](../frontend/src/pages/KnowledgeFieldsPage.jsx) — delete modal with cascade option.
-- [App.css](../frontend/src/App.css) — modal styles, danger button styles, list item actions spacing.
+- [App.css](../frontend/src/App.css) — modal styles (incl. `.modal-wide`, vertical-only textarea resize), danger button styles, list item actions spacing, card list layout, Markdown preview/syntax-highlighting styles.
+- [index.css](../frontend/src/index.css) — `--code-bg`/`--syntax-*` theme variables, scoped the inline-`code` background rule to exclude `<pre><code>`.
+- [components/MarkdownField.jsx](../frontend/src/components/MarkdownField.jsx) *(new)* — Write/Preview Markdown editor used for card content fields.
+- [components/MarkdownView.jsx](../frontend/src/components/MarkdownView.jsx) *(new)* — read-only Markdown renderer used in the card list.
+- [lib/markdown.js](../frontend/src/lib/markdown.js) *(new)* — shared `marked` instance (KaTeX + highlight.js extensions).
 
 **Backend:**
-- [cardResourceModel.js](../backend/src/models/cardResourceModel.js) — `setResourcesForCard`.
-- [cardService.js](../backend/src/services/cardService.js) — resource sync in `updateCard`.
+- [cardResourceModel.js](../backend/src/models/cardResourceModel.js) — `setResourcesForCard`, `getResourcesForCards` (batch).
+- [cardFieldModel.js](../backend/src/models/cardFieldModel.js) — `getFieldsForCards` (batch).
+- [cardService.js](../backend/src/services/cardService.js) — resource sync in `updateCard`, new `listCardsFull`.
+- [routes/cards.js](../backend/src/routes/cards.js) — `GET /cards` now returns `resources`/`fields` via `listCardsFull`.
 - [knowledgeFieldModel.js](../backend/src/models/knowledgeFieldModel.js) — `removeCascade`.
 - [knowledgeFieldService.js](../backend/src/services/knowledgeFieldService.js) — cascade option.
 - [knowledgeFields.js (routes)](../backend/src/routes/knowledgeFields.js) — `?cascade=1` query param.
+
+**New frontend dependencies** (installed manually, not by Claude — per project convention): `marked`, `marked-katex-extension`, `katex`, `marked-highlight`, `highlight.js`.
 
 **API:**
 - [api/knowledgeFields.js](../frontend/src/api/knowledgeFields.js) — cascade param support.
