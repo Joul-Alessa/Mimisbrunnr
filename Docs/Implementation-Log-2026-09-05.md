@@ -50,11 +50,19 @@ UI/UX improvements across Resources, Cards, and Knowledge Fields pages: modals f
   3. Modal type selector dropdown.
 - **Note:** database and API still use the original keys (no backend changes needed).
 
+### Card Type Labels (Aesthetic)
+[CardsPage.jsx](../frontend/src/pages/CardsPage.jsx): database keys (plain, front_back, cloze, custom) now display as human-friendly labels.
+- **Mapping:** `CARD_TYPE_LABELS` object: `plain → "Plain Knowledge"`, `front_back → "Front / Back"`, `cloze → "Cloze"`, `custom → "Custom"`.
+- **Applied in two places:**
+  1. Card list display (`[Plain Knowledge]` instead of `[plain]`).
+  2. Modal type selector dropdown.
+- **Note:** database and API still use the original keys (no backend changes needed).
+
 ## Summary of Files Changed
 
 **Frontend:**
-- [ResourcesPage.jsx](../frontend/src/pages/ResourcesPage.jsx) — modal pattern, type labels.
-- [CardsPage.jsx](../frontend/src/pages/CardsPage.jsx) — modal pattern, delete, fixed edit pre-fill.
+- [ResourcesPage.jsx](../frontend/src/pages/ResourcesPage.jsx) — modal pattern, resource type labels.
+- [CardsPage.jsx](../frontend/src/pages/CardsPage.jsx) — modal pattern, delete, fixed edit pre-fill, card type labels.
 - [KnowledgeFieldsPage.jsx](../frontend/src/pages/KnowledgeFieldsPage.jsx) — delete modal with cascade option.
 - [App.css](../frontend/src/App.css) — modal styles, danger button styles, list item actions spacing.
 

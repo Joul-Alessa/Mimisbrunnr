@@ -4,6 +4,16 @@ import { listResources } from '../api/resources';
 import { listFields } from '../api/knowledgeFields';
 
 const CARD_TYPES = ['plain', 'front_back', 'cloze', 'custom'];
+const CARD_TYPE_LABELS = {
+  plain: 'Plain Knowledge',
+  front_back: 'Front / Back',
+  cloze: 'Cloze',
+  custom: 'Custom',
+};
+
+function getTypeLabel(type) {
+  return CARD_TYPE_LABELS[type] || type;
+}
 
 function emptyForm() {
   return {
@@ -136,7 +146,7 @@ export default function CardsPage() {
         {cards.map((c) => (
           <li key={c.id} className="list-item">
             <span>
-              <strong>[{c.type}]</strong> {c.content || c.front || c.cloze_text}
+              <strong>[{getTypeLabel(c.type)}]</strong> {c.content || c.front || c.cloze_text}
             </span>
             <span className="list-item-actions">
               {c.type === 'plain' && (
@@ -159,7 +169,7 @@ export default function CardsPage() {
             <h3>{editingId ? 'Edit card' : 'Add card'}</h3>
             <form onSubmit={handleSubmit} className="modal-form">
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                {CARD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {CARD_TYPES.map((t) => <option key={t} value={t}>{getTypeLabel(t)}</option>)}
               </select>
 
               {form.type === 'plain' && (
