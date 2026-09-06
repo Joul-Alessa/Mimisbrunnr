@@ -2,6 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { listResources, createResource, updateResource } from '../api/resources';
 
 const RESOURCE_TYPES = ['youtube', 'book', 'article', 'ai', 'other'];
+const RESOURCE_TYPE_LABELS = {
+  youtube: 'YouTube',
+  book: 'Book',
+  article: 'Article',
+  ai: 'AI',
+  other: 'Other',
+};
+
+function getTypeLabel(type) {
+  return RESOURCE_TYPE_LABELS[type] || type;
+}
 
 function emptyForm() {
   return { type: 'youtube', title: '', author_or_channel: '', url: '', editorial: '', notes: '' };
@@ -96,7 +107,7 @@ export default function ResourcesPage() {
         />
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
           <option value="">All types</option>
-          {RESOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          {RESOURCE_TYPES.map((t) => <option key={t} value={t}>{getTypeLabel(t)}</option>)}
         </select>
       </div>
 
@@ -104,7 +115,7 @@ export default function ResourcesPage() {
         {filteredResources.map((r) => (
           <li key={r.id} className="list-item">
             <span>
-              <strong>[{r.type}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
+              <strong>[{getTypeLabel(r.type)}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
             </span>
             <button type="button" onClick={() => openEditModal(r)}>Edit</button>
           </li>
@@ -118,7 +129,7 @@ export default function ResourcesPage() {
             <h3>{editingId ? 'Edit resource' : 'Add resource'}</h3>
             <form onSubmit={handleSubmit} className="modal-form">
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                {RESOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                {RESOURCE_TYPES.map((t) => <option key={t} value={t}>{getTypeLabel(t)}</option>)}
               </select>
               <input
                 placeholder="Title"
