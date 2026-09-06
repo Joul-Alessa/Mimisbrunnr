@@ -1,13 +1,13 @@
 const { getDb } = require('../db/connection');
 const { nowIso } = require('../db/utils');
 
-async function create({ card_id, mode, generated_content }) {
+async function create({ card_id, mode, generated_content, study_session_id = null }) {
   const db = getDb();
   const now = nowIso();
   const { lastID } = await db.run(
-    `INSERT INTO card_generation (card_id, mode, generated_content, created_at)
-     VALUES (?, ?, ?, ?)`,
-    [card_id, mode, generated_content, now]
+    `INSERT INTO card_generation (card_id, mode, generated_content, study_session_id, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [card_id, mode, generated_content, study_session_id, now]
   );
   return findById(lastID);
 }

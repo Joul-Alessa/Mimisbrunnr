@@ -45,6 +45,13 @@ async function findAll({ type } = {}) {
   return db.all('SELECT * FROM card ORDER BY created_at DESC');
 }
 
+// All card ids — the "study everything" scope for a study session.
+async function findAllIds() {
+  const db = getDb();
+  const rows = await db.all('SELECT id FROM card');
+  return rows.map((row) => row.id);
+}
+
 async function update(id, fields) {
   const db = getDb();
   const { setClause, values } = buildSetClause(fields, UPDATABLE_COLUMNS);
@@ -63,4 +70,4 @@ async function remove(id) {
   return changes > 0;
 }
 
-module.exports = { create, findById, findAll, update, remove };
+module.exports = { create, findById, findAll, findAllIds, update, remove };

@@ -135,7 +135,7 @@ async function deleteCard(id) {
 // Sends a plain-knowledge card's content through the LLM interface (spec
 // section 5). `save: false` skips persisting to card_generation, letting the
 // caller preview a transformation without keeping it around.
-async function generateFromCard(id, mode, { save = true } = {}) {
+async function generateFromCard(id, mode, { save = true, study_session_id = null } = {}) {
   const card = await cardModel.findById(id);
   if (!card) throw new NotFoundError(`Card ${id} not found`);
   if (card.type !== 'plain') {
@@ -149,6 +149,7 @@ async function generateFromCard(id, mode, { save = true } = {}) {
       card_id: id,
       mode: result.mode,
       generated_content: result.generated_content,
+      study_session_id,
     });
   }
 

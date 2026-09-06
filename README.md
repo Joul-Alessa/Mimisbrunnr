@@ -87,9 +87,10 @@ cp .env.example .env    # VITE_API_URL, defaults to http://localhost:3000/api
 npm run dev
 ```
 
-Pages: **Study** (weighted due-card queue with easy/medium/hard feedback), **Cards**
-(create plain/front_back/cloze cards, link resources & fields, trigger the LLM stub),
-**Resources**, **Knowledge Fields** (nested tree + add form).
+Pages: **Study** (timestamped study sessions over a chosen scope — all cards, a
+knowledge field, or a resource — with weighted easy/medium/hard card selection and
+session history), **Cards** (create plain/front_back/cloze cards, link resources &
+fields), **Resources**, **Knowledge Fields** (nested tree + add form).
 
 ## API overview
 
@@ -101,13 +102,22 @@ explored by reading the route files directly (`backend/src/routes/`), but in sho
   `resource_details`, and `field_ids` to run the full card-creation flow in one call
   - `POST/DELETE /api/cards/:id/resources[/:resourceId]`
   - `GET/PUT/POST/DELETE /api/cards/:id/fields[/:fieldId]`
-  - `POST /api/cards/:id/generate` `{ mode, save }` — LLM transform (stubbed)
   - `GET /api/cards/:id/generations`
 - `GET/POST/PUT/DELETE /api/knowledge-fields[/:id]` — `?tree=1` for a nested tree
   - `GET /api/knowledge-fields/:id/children`
   - `GET /api/knowledge-fields/:id/cards` — `?includeSubfields=1` to recurse
-- `GET /api/study/queue` — `?fieldId=&includeSubfields=1&limit=` weighted study queue
-- `POST /api/study/review` `{ card_id, status }` — `status` is `easy`/`medium`/`hard`
+- `GET /api/study/sessions` — history, each with scope + progress counts
+  - `GET /api/study/sessions/open` — the currently open (unfinished) session, if any
+  - `POST /api/study/sessions` `{ scope_type: 'all'|'field'|'resource', scope_field_id?,
+    include_subfields?, scope_resource_id? }` — starts a session, closing any other open one
+  - `GET /api/study/sessions/:id` — detail: scope, progress, chronological review log
+  - `POST /api/study/sessions/:id/end`
+  - `GET /api/study/sessions/:id/next-card` — weighted pick from the full scope (every
+    card stays eligible all session; unseen > hard > medium > easy, no due dates)
+  - `POST /api/study/sessions/:id/reviews` `{ card_id, status }` — `status` is
+    `easy`/`medium`/`hard`
+  - `POST /api/study/sessions/:id/generate` `{ card_id, mode }` — LLM transform of a
+    `plain` card (stubbed), recorded against the session
 
 ## Known decisions worth knowing about
 
@@ -116,10 +126,14 @@ explored by reading the route files directly (`backend/src/routes/`), but in sho
   working but needs the `--experimental-sqlite` flag; the project ended up on the
   mature `sqlite3` package instead (callback-based, wrapped in promises in
   `backend/src/db/connection.js`).
-- **Spaced repetition:** tunable parameters live in
-  `backend/src/services/spacedRepetition.js` (`SR_CONFIG`) — ease factor bounds,
-  interval multipliers, etc. `"hard"` resets the repetition streak (like Anki's
-  "again") and shrinks the interval directly rather than scaling by ease_factor.
+- **No more due-date scheduling:** study is now session-based instead of a daily
+  due-card queue — every card in a session's chosen scope stays eligible for the
+  whole session (a card rated "easy" a minute ago can still resurface). `card_review.
+  ease_factor` (tunable in `backend/src/services/spacedRepetition.js`, `SR_CONFIG`) is
+  kept only as a secondary weight — cards not yet rated in the current session are
+  weighted far above hard > medium > easy ones, and ease_factor breaks ties within
+  that. `interval_days`/`repetitions`/`next_review_at` on `card_review` are legacy
+  columns, no longer written or read.
 - **LLM integration:** `backend/src/services/llmService.js` builds real prompts per
   mode (`question`/`cloze`/`example`/`reasoning`/`random`) but `callLLM()` is a stub
   that returns the prompt itself instead of a model response, until a local LLM

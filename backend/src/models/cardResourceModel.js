@@ -50,6 +50,13 @@ async function getCardsForResource(resource_id) {
   );
 }
 
+// Card ids linked to a resource — used to resolve a study session's scope.
+async function getCardIdsForResource(resource_id) {
+  const db = getDb();
+  const rows = await db.all('SELECT card_id FROM card_resource WHERE resource_id = ?', [resource_id]);
+  return rows.map((row) => row.card_id);
+}
+
 // Batch-fetches resources for many cards in one query, returning a
 // { [card_id]: Resource[] } map so list views can avoid N+1 queries.
 async function getResourcesForCards(cardIds) {
@@ -75,5 +82,6 @@ module.exports = {
   setResourcesForCard,
   getResourcesForCard,
   getCardsForResource,
+  getCardIdsForResource,
   getResourcesForCards,
 };

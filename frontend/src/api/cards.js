@@ -11,5 +11,4 @@ export const unlinkResourceFromCard = (id, resourceId) => del(`/cards/${id}/reso
 
 export const setCardFields = (id, fieldIds) => put(`/cards/${id}/fields`, { field_ids: fieldIds });
 
-export const generateFromCard = (id, mode, save = true) => post(`/cards/${id}/generate`, { mode, save });
 export const listCardGenerations = (id) => get(`/cards/${id}/generations`);

@@ -1,22 +1,17 @@
 const { getDb } = require('../db/connection');
-const { nowIso, buildSetClause } = require('../db/utils');
+const { nowIso } = require('../db/utils');
+const { SR_CONFIG, nextEaseFactor } = require('../services/spacedRepetition');
 
-const UPDATABLE_COLUMNS = ['last_reviewed_at', 'next_review_at', 'ease_factor', 'interval_days', 'repetitions', 'status'];
-
-// Initializes spaced repetition state for a brand-new card: due immediately.
+// Initializes spaced-repetition state for a brand-new card. interval_days /
+// repetitions are kept at 0 and unused going forward (no due-date
+// scheduling); only ease_factor is maintained, as a secondary weight for
+// study-session card selection.
 async function createForCard(card_id, overrides = {}) {
   const db = getDb();
-  const {
-    ease_factor = 2.5,
-    interval_days = 0,
-    repetitions = 0,
-    next_review_at = nowIso(),
-  } = overrides;
-
+  const { ease_factor = SR_CONFIG.initialEaseFactor } = overrides;
   await db.run(
-    `INSERT INTO card_review (card_id, ease_factor, interval_days, repetitions, next_review_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    [card_id, ease_factor, interval_days, repetitions, next_review_at]
+    `INSERT INTO card_review (card_id, ease_factor, interval_days, repetitions) VALUES (?, ?, 0, 0)`,
+    [card_id, ease_factor]
   );
   return findByCardId(card_id);
 }
@@ -26,41 +21,46 @@ async function findByCardId(card_id) {
   return db.get('SELECT * FROM card_review WHERE card_id = ?', [card_id]);
 }
 
-async function update(card_id, fields) {
+// Applies a study-session rating's ease-factor delta and records it as the
+// card's most recently known status/last_reviewed_at (for display and as
+// the secondary weight in study session card selection). Creates the review
+// row on the fly for cards that predate it having one.
+async function recordRating(card_id, status) {
   const db = getDb();
-  const { setClause, values } = buildSetClause(fields, UPDATABLE_COLUMNS);
-  if (!setClause) return findByCardId(card_id);
+  const review = await findByCardId(card_id);
+  const ease_factor = nextEaseFactor(review?.ease_factor ?? SR_CONFIG.initialEaseFactor, status);
+  const now = nowIso();
 
-  await db.run(`UPDATE card_review SET ${setClause} WHERE card_id = ?`, [...values, card_id]);
+  if (review) {
+    await db.run(
+      'UPDATE card_review SET ease_factor = ?, status = ?, last_reviewed_at = ? WHERE card_id = ?',
+      [ease_factor, status, now, card_id]
+    );
+  } else {
+    await db.run(
+      `INSERT INTO card_review (card_id, ease_factor, interval_days, repetitions, status, last_reviewed_at)
+       VALUES (?, ?, 0, 0, ?, ?)`,
+      [card_id, ease_factor, status, now]
+    );
+  }
   return findByCardId(card_id);
 }
 
-// Cards due for review (next_review_at is null or in the past/near future),
-// optionally restricted to a set of knowledge_field ids.
-async function findDue({ fieldIds = null, asOf = null, limit = 50 } = {}) {
+// Batch-fetches ease_factor per card (defaulting missing ones to the
+// initial value) for weighting which card should surface next in a session.
+async function getEaseFactorsForCards(cardIds) {
+  const map = {};
+  for (const id of cardIds) map[id] = SR_CONFIG.initialEaseFactor;
+  if (cardIds.length === 0) return map;
+
   const db = getDb();
-  const cutoff = asOf || nowIso();
-
-  if (fieldIds && fieldIds.length > 0) {
-    const placeholders = fieldIds.map(() => '?').join(', ');
-    return db.all(
-      `SELECT DISTINCT cr.* FROM card_review cr
-       JOIN card_field cf ON cf.card_id = cr.card_id
-       WHERE cf.field_id IN (${placeholders})
-         AND (cr.next_review_at IS NULL OR cr.next_review_at <= ?)
-       ORDER BY cr.next_review_at IS NOT NULL, cr.next_review_at ASC
-       LIMIT ?`,
-      [...fieldIds, cutoff, limit]
-    );
-  }
-
-  return db.all(
-    `SELECT * FROM card_review
-     WHERE next_review_at IS NULL OR next_review_at <= ?
-     ORDER BY next_review_at IS NOT NULL, next_review_at ASC
-     LIMIT ?`,
-    [cutoff, limit]
+  const placeholders = cardIds.map(() => '?').join(', ');
+  const rows = await db.all(
+    `SELECT card_id, ease_factor FROM card_review WHERE card_id IN (${placeholders})`,
+    cardIds
   );
+  for (const row of rows) map[row.card_id] = row.ease_factor;
+  return map;
 }
 
-module.exports = { createForCard, findByCardId, update, findDue };
+module.exports = { createForCard, findByCardId, recordRating, getEaseFactorsForCards };

@@ -47,6 +47,19 @@ async function getCardsForField(field_id) {
   );
 }
 
+// Distinct card ids tagged with any of `fieldIds` — used to resolve a study
+// session's scope (a field, optionally together with its subfield ids).
+async function getCardIdsForFields(fieldIds) {
+  if (fieldIds.length === 0) return [];
+  const db = getDb();
+  const placeholders = fieldIds.map(() => '?').join(', ');
+  const rows = await db.all(
+    `SELECT DISTINCT card_id FROM card_field WHERE field_id IN (${placeholders})`,
+    fieldIds
+  );
+  return rows.map((row) => row.card_id);
+}
+
 // Batch-fetches knowledge fields for many cards in one query, returning a
 // { [card_id]: KnowledgeField[] } map so list views can avoid N+1 queries.
 async function getFieldsForCards(cardIds) {
@@ -72,5 +85,6 @@ module.exports = {
   setFieldsForCard,
   getFieldsForCard,
   getCardsForField,
+  getCardIdsForFields,
   getFieldsForCards,
 };

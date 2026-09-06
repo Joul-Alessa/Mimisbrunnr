@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listCards, getCard, createCard, updateCard, deleteCard, generateFromCard } from '../api/cards';
+import { listCards, getCard, createCard, updateCard, deleteCard } from '../api/cards';
 import { listResources } from '../api/resources';
 import { listFields } from '../api/knowledgeFields';
 import MarkdownField from '../components/MarkdownField';
@@ -115,7 +115,6 @@ export default function CardsPage() {
   const [editingId, setEditingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState(null);
-  const [generated, setGenerated] = useState({});
   const [resourceSearch, setResourceSearch] = useState('');
   const [cardSearch, setCardSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -307,16 +306,6 @@ export default function CardsPage() {
     }
   }
 
-  async function handleGenerate(cardId) {
-    setError(null);
-    try {
-      const result = await generateFromCard(cardId, 'random');
-      setGenerated((prev) => ({ ...prev, [cardId]: result }));
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
   return (
     <div>
       <h2>Cards</h2>
@@ -345,9 +334,6 @@ export default function CardsPage() {
             <div className="card-list-item-header">
               <strong>[{getTypeLabel(c.type)}]</strong>
               <span className="list-item-actions">
-                {c.type === 'plain' && (
-                  <button type="button" onClick={() => handleGenerate(c.id)}>Generate (LLM)</button>
-                )}
                 <button type="button" onClick={() => openEditModal(c)}>Edit</button>
                 <button type="button" onClick={() => handleDelete(c.id)}>Delete</button>
               </span>
@@ -380,9 +366,6 @@ export default function CardsPage() {
                   })}
                 </ul>
               </div>
-            )}
-            {generated[c.id] && (
-              <pre className="generated">{generated[c.id].mode}: {generated[c.id].generated_content}</pre>
             )}
           </li>
         ))}
