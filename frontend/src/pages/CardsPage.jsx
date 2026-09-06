@@ -37,6 +37,21 @@ function matchesResourceSearch(resource, search) {
     .some((field) => field.toLowerCase().includes(needle));
 }
 
+function matchesCardSearch(card, search) {
+  if (!search) return true;
+  const needle = search.toLowerCase();
+  const haystack = [
+    card.content,
+    card.front,
+    card.back,
+    card.cloze_text,
+    getTypeLabel(card.type),
+    ...(card.resources || []).flatMap((r) => [r.title, r.author_or_channel]),
+    ...(card.fields || []).map((f) => f.name),
+  ];
+  return haystack.filter(Boolean).some((field) => field.toLowerCase().includes(needle));
+}
+
 function emptyForm() {
   return {
     type: 'plain',
@@ -59,10 +74,24 @@ export default function CardsPage() {
   const [error, setError] = useState(null);
   const [generated, setGenerated] = useState({});
   const [resourceSearch, setResourceSearch] = useState('');
+  const [cardSearch, setCardSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [fieldFilter, setFieldFilter] = useState('');
 
   const filteredResources = useMemo(
     () => resources.filter((r) => matchesResourceSearch(r, resourceSearch)),
     [resources, resourceSearch]
+  );
+
+  const filteredCards = useMemo(
+    () =>
+      cards.filter(
+        (c) =>
+          (typeFilter ? c.type === typeFilter : true) &&
+          (fieldFilter ? (c.fields || []).some((f) => String(f.id) === fieldFilter) : true) &&
+          matchesCardSearch(c, cardSearch)
+      ),
+    [cards, cardSearch, typeFilter, fieldFilter]
   );
 
   async function refresh() {
@@ -170,10 +199,23 @@ export default function CardsPage() {
 
       <div className="toolbar">
         <button type="button" onClick={openCreateModal}>+ Add card</button>
+        <input
+          placeholder="Search content, source, type, knowledge field..."
+          value={cardSearch}
+          onChange={(e) => setCardSearch(e.target.value)}
+        />
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="">All types</option>
+          {CARD_TYPES.map((t) => <option key={t} value={t}>{getTypeLabel(t)}</option>)}
+        </select>
+        <select value={fieldFilter} onChange={(e) => setFieldFilter(e.target.value)}>
+          <option value="">All knowledge fields</option>
+          {fields.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+        </select>
       </div>
 
       <ul className="list">
-        {cards.map((c) => (
+        {filteredCards.map((c) => (
           <li key={c.id} className="card-list-item">
             <div className="card-list-item-header">
               <strong>[{getTypeLabel(c.type)}]</strong>
@@ -195,12 +237,20 @@ export default function CardsPage() {
                 <MarkdownView content={c.content || c.cloze_text} />
               )}
             </div>
+            {c.resources && c.resources.length > 0 && (
+              <p className="card-source hint">
+                Source: {c.resources.map((r) => `[${getResourceTypeLabel(r.type)}] ${r.title}`).join(', ')}
+              </p>
+            )}
             {generated[c.id] && (
               <pre className="generated">{generated[c.id].mode}: {generated[c.id].generated_content}</pre>
             )}
           </li>
         ))}
         {cards.length === 0 && <p className="hint">No cards yet.</p>}
+        {cards.length > 0 && filteredCards.length === 0 && (
+          <p className="hint">No cards match your search/filters.</p>
+        )}
       </ul>
 
       {isModalOpen && (

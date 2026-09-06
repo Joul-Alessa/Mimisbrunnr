@@ -50,10 +50,30 @@ async function getCardsForResource(resource_id) {
   );
 }
 
+// Batch-fetches resources for many cards in one query, returning a
+// { [card_id]: Resource[] } map so list views can avoid N+1 queries.
+async function getResourcesForCards(cardIds) {
+  if (cardIds.length === 0) return {};
+  const db = getDb();
+  const placeholders = cardIds.map(() => '?').join(', ');
+  const rows = await db.all(
+    `SELECT cr.card_id AS card_id, r.* FROM resource r
+     JOIN card_resource cr ON cr.resource_id = r.id
+     WHERE cr.card_id IN (${placeholders})`,
+    cardIds
+  );
+  const map = {};
+  for (const { card_id, ...resource } of rows) {
+    (map[card_id] ||= []).push(resource);
+  }
+  return map;
+}
+
 module.exports = {
   addResourceToCard,
   removeResourceFromCard,
   setResourcesForCard,
   getResourcesForCard,
   getCardsForResource,
+  getResourcesForCards,
 };

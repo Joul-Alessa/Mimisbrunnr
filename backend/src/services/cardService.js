@@ -69,6 +69,24 @@ async function createCard(payload) {
   return getCardFull(card.id);
 }
 
+// Lists cards with their resources and knowledge fields attached, batching
+// the joins so the list view doesn't need to fetch each card individually.
+async function listCardsFull({ type } = {}) {
+  const cards = await cardModel.findAll({ type });
+  const ids = cards.map((c) => c.id);
+
+  const [resourcesByCard, fieldsByCard] = await Promise.all([
+    cardResourceModel.getResourcesForCards(ids),
+    cardFieldModel.getFieldsForCards(ids),
+  ]);
+
+  return cards.map((card) => ({
+    ...card,
+    resources: resourcesByCard[card.id] || [],
+    fields: fieldsByCard[card.id] || [],
+  }));
+}
+
 async function getCardFull(id) {
   const card = await cardModel.findById(id);
   if (!card) throw new NotFoundError(`Card ${id} not found`);
@@ -135,4 +153,13 @@ async function listGenerations(id) {
   return cardGenerationModel.findByCardId(id);
 }
 
-module.exports = { createCard, getCardFull, updateCard, deleteCard, generateFromCard, listGenerations, CARD_TYPES };
+module.exports = {
+  createCard,
+  listCardsFull,
+  getCardFull,
+  updateCard,
+  deleteCard,
+  generateFromCard,
+  listGenerations,
+  CARD_TYPES,
+};

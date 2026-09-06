@@ -1,5 +1,4 @@
 const express = require('express');
-const cardModel = require('../models/cardModel');
 const cardService = require('../services/cardService');
 const cardResourceModel = require('../models/cardResourceModel');
 const cardFieldModel = require('../models/cardFieldModel');
@@ -10,7 +9,7 @@ const router = express.Router();
 
 router.get('/', asyncHandler(async (req, res) => {
   const { type } = req.query;
-  res.json(await cardModel.findAll({ type }));
+  res.json(await cardService.listCardsFull({ type }));
 }));
 
 router.get('/:id', asyncHandler(async (req, res) => {

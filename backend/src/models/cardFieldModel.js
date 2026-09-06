@@ -47,4 +47,30 @@ async function getCardsForField(field_id) {
   );
 }
 
-module.exports = { addFieldToCard, removeFieldFromCard, setFieldsForCard, getFieldsForCard, getCardsForField };
+// Batch-fetches knowledge fields for many cards in one query, returning a
+// { [card_id]: KnowledgeField[] } map so list views can avoid N+1 queries.
+async function getFieldsForCards(cardIds) {
+  if (cardIds.length === 0) return {};
+  const db = getDb();
+  const placeholders = cardIds.map(() => '?').join(', ');
+  const rows = await db.all(
+    `SELECT cf.card_id AS card_id, kf.* FROM knowledge_field kf
+     JOIN card_field cf ON cf.field_id = kf.id
+     WHERE cf.card_id IN (${placeholders})`,
+    cardIds
+  );
+  const map = {};
+  for (const { card_id, ...field } of rows) {
+    (map[card_id] ||= []).push(field);
+  }
+  return map;
+}
+
+module.exports = {
+  addFieldToCard,
+  removeFieldFromCard,
+  setFieldsForCard,
+  getFieldsForCard,
+  getCardsForField,
+  getFieldsForCards,
+};
