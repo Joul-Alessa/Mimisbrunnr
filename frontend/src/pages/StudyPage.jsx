@@ -93,8 +93,8 @@ export default function StudyPage() {
     refreshAll();
   }, []);
 
-  async function loadNextCard(sessionId) {
-    const card = await getNextStudyCard(sessionId);
+  async function loadNextCard(sessionId, excludeCardId) {
+    const card = await getNextStudyCard(sessionId, excludeCardId);
     setCurrentCard(card);
     setRevealed(false);
     setGenerated(null);
@@ -162,9 +162,10 @@ export default function StudyPage() {
     if (!currentCard || !activeSession) return;
     setError(null);
     try {
-      const updatedProgress = await submitSessionReview(activeSession.id, currentCard.id, status);
+      const reviewedCardId = currentCard.id;
+      const updatedProgress = await submitSessionReview(activeSession.id, reviewedCardId, status);
       setProgress(updatedProgress);
-      await loadNextCard(activeSession.id);
+      await loadNextCard(activeSession.id, reviewedCardId);
     } catch (err) {
       setError(err.message);
     }

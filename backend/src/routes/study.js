@@ -30,8 +30,11 @@ router.post('/sessions/:id/end', asyncHandler(async (req, res) => {
 }));
 
 // Weighted-random pick of the next card to show for this session.
+// ?excludeCardId= leaves a specific card (typically the one just rated) out
+// of the draw so it can't immediately reappear.
 router.get('/sessions/:id/next-card', asyncHandler(async (req, res) => {
-  res.json(await studyService.getNextCard(req.params.id));
+  const { excludeCardId } = req.query;
+  res.json(await studyService.getNextCard(req.params.id, { excludeCardId: excludeCardId || null }));
 }));
 
 router.post('/sessions/:id/reviews', asyncHandler(async (req, res) => {

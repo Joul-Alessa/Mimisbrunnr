@@ -157,20 +157,28 @@ async function getSessionDetail(id) {
 
 // Weighted-random pick of the next card to study within a session, drawn
 // from every card in the session's scope (never a shrinking queue).
-async function getNextCard(sessionId) {
+// `excludeCardId` (typically the card just rated) is left out of the draw
+// so the same card never shows up twice in a row — the card currently on
+// screen is still being reviewed, it shouldn't immediately reappear as if
+// it were a fresh pick (e.g. via Generate LLM on it again right after).
+async function getNextCard(sessionId, { excludeCardId = null } = {}) {
   const session = await studySessionModel.findById(sessionId);
   if (!session) throw new NotFoundError(`Study session ${sessionId} not found`);
 
   const cardIds = await resolveScopeCardIds(session);
   if (cardIds.length === 0) return null;
 
+  const excludeId = excludeCardId != null ? Number(excludeCardId) : null;
+  const candidateIds =
+    excludeId != null && cardIds.length > 1 ? cardIds.filter((id) => id !== excludeId) : cardIds;
+
   const [latestStatuses, easeFactors] = await Promise.all([
     studySessionReviewModel.latestStatusesBySession(sessionId),
-    cardReviewModel.getEaseFactorsForCards(cardIds),
+    cardReviewModel.getEaseFactorsForCards(candidateIds),
   ]);
 
-  const weights = cardIds.map((id) => weightFor(id, latestStatuses, easeFactors));
-  const chosenId = weightedPick(cardIds, weights);
+  const weights = candidateIds.map((id) => weightFor(id, latestStatuses, easeFactors));
+  const chosenId = weightedPick(candidateIds, weights);
 
   return cardService.getCardFull(chosenId);
 }

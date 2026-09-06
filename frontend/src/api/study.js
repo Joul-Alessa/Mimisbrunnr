@@ -7,7 +7,8 @@ export const getStudySession = (id) => get(`/study/sessions/${id}`);
 export const startStudySession = (payload) => post('/study/sessions', payload);
 export const endStudySession = (id) => post(`/study/sessions/${id}/end`);
 
-export const getNextStudyCard = (sessionId) => get(`/study/sessions/${sessionId}/next-card`);
+export const getNextStudyCard = (sessionId, excludeCardId) =>
+  get(`/study/sessions/${sessionId}/next-card${excludeCardId ? `?excludeCardId=${excludeCardId}` : ''}`);
 export const submitSessionReview = (sessionId, cardId, status) =>
   post(`/study/sessions/${sessionId}/reviews`, { card_id: cardId, status });
 
