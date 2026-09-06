@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getStudyQueue, submitReview } from '../api/study';
 import { listFields } from '../api/knowledgeFields';
+import MarkdownView from '../components/MarkdownView';
 
 function cardPrompt(card) {
   if (card.type === 'plain') return card.content;
@@ -81,12 +82,12 @@ export default function StudyPage() {
 
       {current && (
         <div className="study-card">
-          <p className="prompt">{cardPrompt(current)}</p>
+          <MarkdownView className="prompt" content={cardPrompt(current)} />
 
           {cardAnswer(current) && !revealed && (
             <button type="button" onClick={() => setRevealed(true)}>Reveal answer</button>
           )}
-          {cardAnswer(current) && revealed && <p className="answer">{cardAnswer(current)}</p>}
+          {cardAnswer(current) && revealed && <MarkdownView className="answer" content={cardAnswer(current)} />}
 
           <div className="review-buttons">
             <button type="button" onClick={() => handleReview('hard')}>Hard</button>
