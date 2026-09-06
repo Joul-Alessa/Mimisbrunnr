@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { listCards, getCard, createCard, updateCard, deleteCard, generateFromCard } from '../api/cards';
 import { listResources } from '../api/resources';
 import { listFields } from '../api/knowledgeFields';
@@ -11,8 +11,28 @@ const CARD_TYPE_LABELS = {
   custom: 'Custom',
 };
 
+const RESOURCE_TYPE_LABELS = {
+  youtube: 'YouTube',
+  book: 'Book',
+  article: 'Article',
+  ai: 'AI',
+  other: 'Other',
+};
+
 function getTypeLabel(type) {
   return CARD_TYPE_LABELS[type] || type;
+}
+
+function getResourceTypeLabel(type) {
+  return RESOURCE_TYPE_LABELS[type] || type;
+}
+
+function matchesResourceSearch(resource, search) {
+  if (!search) return true;
+  const needle = search.toLowerCase();
+  return [resource.title, resource.author_or_channel, resource.notes, resource.url]
+    .filter(Boolean)
+    .some((field) => field.toLowerCase().includes(needle));
 }
 
 function emptyForm() {
@@ -36,6 +56,12 @@ export default function CardsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState(null);
   const [generated, setGenerated] = useState({});
+  const [resourceSearch, setResourceSearch] = useState('');
+
+  const filteredResources = useMemo(
+    () => resources.filter((r) => matchesResourceSearch(r, resourceSearch)),
+    [resources, resourceSearch]
+  );
 
   async function refresh() {
     try {
@@ -67,6 +93,7 @@ export default function CardsPage() {
   function openCreateModal() {
     setEditingId(null);
     setForm(emptyForm());
+    setResourceSearch('');
     setIsModalOpen(true);
   }
 
@@ -84,6 +111,7 @@ export default function CardsPage() {
         resource_ids: (full.resources || []).map((r) => r.id),
         field_ids: (full.fields || []).map((f) => f.id),
       });
+      setResourceSearch('');
       setIsModalOpen(true);
     } catch (err) {
       setError(err.message);
@@ -197,16 +225,26 @@ export default function CardsPage() {
 
               <fieldset>
                 <legend>Resources</legend>
-                {resources.map((r) => (
-                  <label key={r.id}>
-                    <input
-                      type="checkbox"
-                      checked={form.resource_ids.includes(r.id)}
-                      onChange={() => toggleMultiSelect('resource_ids', r.id)}
-                    />
-                    {r.title}
-                  </label>
-                ))}
+                <input
+                  placeholder="Search title, author, notes, URL..."
+                  value={resourceSearch}
+                  onChange={(e) => setResourceSearch(e.target.value)}
+                />
+                <ul className="list">
+                  {filteredResources.map((r) => (
+                    <li key={r.id} className="list-item">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={form.resource_ids.includes(r.id)}
+                          onChange={() => toggleMultiSelect('resource_ids', r.id)}
+                        />
+                        <strong>[{getResourceTypeLabel(r.type)}]</strong> {r.title} {r.author_or_channel && `— ${r.author_or_channel}`}
+                      </label>
+                    </li>
+                  ))}
+                  {filteredResources.length === 0 && <p className="hint">No resources match your search.</p>}
+                </ul>
               </fieldset>
 
               <fieldset>
