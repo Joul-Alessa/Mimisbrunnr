@@ -158,6 +158,11 @@
   transition: box-shadow 0.15s, transform 0.15s;
   border: 2px solid transparent;
   color: var(--text);
+  /* Long-press/drag is handled ourselves via Pointer Events on touch, so
+     stop the browser from also treating the gesture as a scroll or from
+     popping its own text-selection/callout menu on hold. */
+  touch-action: none;
+  -webkit-touch-callout: none;
 }
 
 .field-set.depth-0 { background: var(--field-depth-0); }
