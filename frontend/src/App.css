@@ -109,6 +109,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 0.3rem;
 }
@@ -279,6 +280,7 @@ button.danger {
 
 .review-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
 }
@@ -360,6 +362,7 @@ button.danger {
 
 .modal-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.5rem;
@@ -511,4 +514,52 @@ button.danger {
 .markdown-preview .hljs-template-variable,
 .markdown-preview .hljs-params {
   color: var(--syntax-variable);
+}
+
+/* --- Mobile layout --- */
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 0.75rem;
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.15rem;
+  }
+
+  .app-header nav {
+    order: 3;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  .modal {
+    padding: 1rem;
+  }
+
+  .modal-actions {
+    justify-content: stretch;
+  }
+
+  .modal-actions button {
+    flex: 1;
+  }
+
+  .resource-detail-inputs {
+    margin-left: 0;
+  }
+
+  .field-canvas {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .review-buttons button {
+    flex: 1 1 auto;
+  }
 }
