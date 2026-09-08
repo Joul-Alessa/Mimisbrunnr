@@ -1,0 +1,34 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: mimisbrunnr-backend
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_PATH: /app/data/mimisbrunnr.sqlite
+      LLM_PROVIDER: ollama
+      LLM_BASE_URL: http://host.docker.internal:11434
+      LLM_MODEL: llama3
+    volumes:
+      - mimisbrunnr-data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Runs in the user's browser, not inside the compose network, so it
+        # must point at the backend's published host port (3000), not the
+        # "backend" service name.
+        VITE_API_URL: http://localhost:3000/api
+    container_name: mimisbrunnr-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mimisbrunnr-data:
